@@ -1,8 +1,7 @@
-ActiveMQ listening on localhost:61616
+1) Have ActiveMQ listening on localhost:61616
 
+2) Create first schema and table
 CREATE SCHEMA atomikos_one;
-CREATE SCHEMA atomikos_two;
-
 CREATE TABLE `customer` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `age` int(11) NOT NULL,
@@ -10,9 +9,14 @@ CREATE TABLE `customer` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 
+3) Create second schema and table
+CREATE SCHEMA atomikos_two;
 CREATE TABLE `orders` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `code` int(11) NOT NULL,
   `quantity` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
+
+4) Run test StoreManagerTest
