@@ -1,0 +1,6 @@
+.classpath
+.project
+.settings/
+*.epoch
+target/
+*.log

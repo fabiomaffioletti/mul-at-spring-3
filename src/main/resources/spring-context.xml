@@ -1,0 +1,168 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:task="http://www.springframework.org/schema/task" xmlns:amq="http://activemq.apache.org/schema/core"
+	xmlns:jms="http://www.springframework.org/schema/jms"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd 
+	http://www.springframework.org/schema/jms 
+                       http://www.springframework.org/schema/jms/spring-jms.xsd
+                           http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.4.0.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.2.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.2.xsd">
+
+	<context:component-scan base-package="com.fm.atomikos" />
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<tx:jta-transaction-manager />
+
+	<!-- Embedded ActiveMQ Broker -->
+	<!-- <amq:broker id="broker" useJmx="false" persistent="false"> -->
+	<!-- <amq:transportConnectors> -->
+	<!-- <amq:transportConnector uri="tcp://localhost:0" /> -->
+	<!-- </amq:transportConnectors> -->
+	<!-- </amq:broker> -->
+
+	<!-- ActiveMQ Queues -->
+	<amq:queue id="queue" physicalName="test_queue" />
+
+	<!-- JMS ConnectionFactory to use, configuring the embedded broker using 
+		XML -->
+	<amq:xaConnectionFactory id="xaFactory"
+		brokerURL="tcp://localhost:61616" />
+		
+<!-- 	<amq:xaConnectionFactory id="xaFactory" -->
+<!-- 		brokerURL="vm://localhost?broker.persistent=false" /> -->
+
+	<bean id="xaConnectionFactoryBean" class="com.atomikos.jms.AtomikosConnectionFactoryBean"
+		init-method="init" destroy-method="close">
+		<!-- The unique resource name needed for recovery by the Atomikos core. -->
+		<property name="uniqueResourceName">
+			<value>QUEUE_BROKER</value>
+		</property>
+		<property name="xaConnectionFactory" ref="xaFactory" />
+	</bean>
+
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="xaConnectionFactoryBean" />
+		<property name="defaultDestination" ref="queue" />
+		<property name="receiveTimeout" value="1000" />
+		<property name="sessionTransacted" value="true" />
+	</bean>
+
+	<!-- <bean id="xaFactory" class="org.apache.activemq.ActiveMQXAConnectionFactory"> -->
+	<!-- <property name="brokerURL"> -->
+	<!-- <value>tcp://localhost:61616</value> -->
+	<!-- </property> -->
+	<!-- </bean> -->
+
+	<!-- JMS Producer Configuration -->
+	<!-- <bean id="jmsProducerConnectionFactory" -->
+	<!-- class="org.springframework.jms.connection.SingleConnectionFactory" -->
+	<!-- depends-on="broker" p:targetConnectionFactory-ref="jmsFactory" /> -->
+
+	<!-- <bean id="jmsProducerTemplate" class="org.springframework.jms.core.JmsTemplate" -->
+	<!-- p:connectionFactory-ref="jmsProducerConnectionFactory" -->
+	<!-- p:defaultDestination-ref="destination" /> -->
+
+	<bean id="dataSourceAtomikos1" class="com.atomikos.jdbc.AtomikosDataSourceBean"
+		init-method="init" destroy-method="close">
+		<property name="uniqueResourceName">
+			<value>DataSourceAtomikos1</value>
+		</property>
+		<property name="xaDataSourceClassName">
+			<value>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</value>
+		</property>
+		<property name="xaProperties">
+			<props>
+				<prop key="databaseName">atomikos_one</prop>
+				<prop key="serverName">localhost</prop>
+				<prop key="port">3306</prop>
+				<prop key="user">root</prop>
+				<prop key="password">password</prop>
+				<prop key="url">jdbc:mysql://localhost:3306/atomikos_one</prop>
+				<prop key="pinGlobalTxToPhysicalConnection">true</prop>
+			</props>
+		</property>
+		<property name="minPoolSize">
+			<value>1</value>
+		</property>
+	</bean>
+
+	<bean id="dataSourceAtomikos2" class="com.atomikos.jdbc.AtomikosDataSourceBean"
+		init-method="init" destroy-method="close">
+		<property name="uniqueResourceName">
+			<value>DataSourceAtomikos2</value>
+		</property>
+		<property name="xaDataSourceClassName">
+			<value>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</value>
+		</property>
+		<property name="xaProperties">
+			<props>
+				<prop key="databaseName">atomikos_two</prop>
+				<prop key="serverName">localhost</prop>
+				<prop key="port">3306</prop>
+				<prop key="user">root</prop>
+				<prop key="password">password</prop>
+				<prop key="url">jdbc:mysql://localhost:3306/atomikos_two</prop>
+				<prop key="pinGlobalTxToPhysicalConnection">true</prop>
+			</props>
+		</property>
+		<property name="minPoolSize">
+			<value>1</value>
+		</property>
+	</bean>
+
+	<bean id="entityManagerFactoryA"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="persistenceXmlLocation">
+			<value>classpath*:persistence.xml</value>
+		</property>
+		<property name="persistenceUnitName" value="PersistenceUnitA" />
+		<property name="dataSource" ref="dataSourceAtomikos1" />
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+				<property name="showSql" value="true" />
+				<property name="databasePlatform" value="org.hibernate.dialect.MySQL5InnoDBDialect" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="entityManagerFactoryB"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="persistenceXmlLocation">
+			<value>classpath*:persistence.xml</value>
+		</property>
+		<property name="persistenceUnitName" value="PersistenceUnitB" />
+		<property name="dataSource" ref="dataSourceAtomikos2" />
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+				<property name="showSql" value="true" />
+				<property name="databasePlatform" value="org.hibernate.dialect.MySQL5InnoDBDialect" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="jdbcTemplateCustomer" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSourceAtomikos1" />
+	</bean>
+
+	<bean id="jdbcTemplateOrder" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSourceAtomikos2" />
+	</bean>
+
+	<bean id="atomikosTransactionManager" class="com.atomikos.icatch.jta.UserTransactionManager"
+		init-method="init" destroy-method="close">
+		<property name="forceShutdown" value="false" />
+	</bean>
+
+	<bean id="atomikosUserTransaction" class="com.atomikos.icatch.jta.J2eeUserTransaction">
+		<property name="transactionTimeout" value="300" />
+	</bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.transaction.jta.JtaTransactionManager"
+		depends-on="atomikosTransactionManager,atomikosUserTransaction">
+		<property name="transactionManager" ref="atomikosTransactionManager" />
+		<property name="userTransaction" ref="atomikosUserTransaction" />
+		<property name="allowCustomIsolationLevels" value="true" />
+	</bean>
+
+</beans>
