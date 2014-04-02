@@ -23,22 +23,6 @@ public class StoreManagerTest {
 
 	@Autowired
 	private OrderDAO orderDAO;
-
-//	@Test
-//	public void testIncrementOrders() {
-//		Customer customerBefore = customerDAO.get(1);
-//		storeManager.saveNewOrder(1, 5);
-//		Customer customerAfter = customerDAO.get(1);
-//		Assert.assertTrue(customerBefore.getOrders() == (customerAfter.getOrders() - 1));
-//	}
-//
-//	@Test
-//	public void testIncrementOrdersWithException() {
-//		Customer customerBefore = customerDAO.get(1);
-//		storeManager.saveNewOrder(1, 5);
-//		Customer customerAfter = customerDAO.get(1);
-//		Assert.assertTrue(customerBefore.getOrders() == customerAfter.getOrders());
-//	}
 	
 	@Test
 	public void testPersistBoth() throws Exception {

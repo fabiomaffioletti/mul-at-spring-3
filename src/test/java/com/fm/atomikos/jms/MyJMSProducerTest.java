@@ -17,7 +17,7 @@ public class MyJMSProducerTest {
 	
 	@Test
 	public void testProduce() throws JMSException {
-		jmsProducer.sendMessage("testMessage");
+//		jmsProducer.sendMessage("testMessage");
 	}
 	
 }
